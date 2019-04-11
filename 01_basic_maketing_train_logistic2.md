@@ -58,6 +58,7 @@ https://archive.ics.uci.edu/ml/datasets/bank+marketing
 
 * 適合率: 48.3%
   -  ランダムに電話した場合は46%の確率で契約取れるはずなので、少しは上がったと考えられる
+  - 実はTestModel2の方が50.5%で4つを組み合わせた場合より適合率が高いので、アタックリストとしてはTestModel2の方が良い
 
 # データ補完パート
 
