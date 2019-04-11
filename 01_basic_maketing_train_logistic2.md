@@ -18,7 +18,7 @@ https://archive.ics.uci.edu/ml/datasets/bank+marketing
 ### ROIを最大化させるための予測モデル
 
 * 基本的なアプローチ
- 1. 以下のCategoryを組み合わせた新しいCategoryを作成
+ 1. 以下のCategoryを掛け合わせた新しいCategoryを作成
     * age
     * job
     * contact
@@ -46,21 +46,17 @@ https://archive.ics.uci.edu/ml/datasets/bank+marketing
     * range_age (10歳おきのCategory)
 
 
-Max Profit: 1544500, Threshold: 0.05
-ConfusionMatrix
-	1649		244
-	1858		369
-* テストデータの予測結果から算出すると
-  -  1,544,500 円の利益がでる。しきい値は 0.05
+* テストデータの予測結果を算出し、訓練データで算出したしきい値0.27を適用すると
+  -   1,488,500 円の利益がでる
 * その時のConfusionMatrix
 
 |        |          | Predict  |          |
 |--------|----------|----------|----------|
 |        |          | Positive | Negative |
-| Actual | Positive | 1649      | 244     |
-|        | Negative | 1858      | 369    |
+| Actual | Positive | 1544      | 349     |
+|        | Negative | 1655      | 572    |
 
-* 適合率: 47.0%
+* 適合率: 48.3%
 
 # データ補完パート
 
@@ -362,15 +358,17 @@ def BANKMarketingPredictProfit(Y, prY):
 
 
 ```python
-def ippatu(train, test):
+def ippatu(train, test, t):
     # 整形
     trainX, trainY = BANKMarketingCreateTrainData(train)
     testX, testY = BANKMarketingCreateTrainData(test)
 
+    # trainデータにあって、testデータに無いカラムは0で埋める
     for c in trainX.columns:
         if(c not in testX.columns):
             testX[c] = 0
 
+    # testデータにあって、trainデータに無いカラムは捨て去る
     for c in testX.columns:
         if(c not in trainX.columns):
             testX.drop(c, axis=1, inplace=True)
@@ -379,17 +377,22 @@ def ippatu(train, test):
     res, trainX, trainY = BANKMarketingGLM(trainX,trainY)
     
     # 予測結果の取得
-    train_predY = res.predict(trainX)
     test_predY = res.predict(testX)
 
-    # しきい値の最適化
-    plt, y, t, tp, fn, fp, tn = BANKMarketingPredictProfit(testY, test_predY)
+    # しきい値を使って0,1に直す
+    test_predY2 = test_predY.map(lambda x: 1 if x > t else 0)
+
+    # 混同行列を作成
+    tn, fp, fn, tp = confusion_matrix(testY, test_predY2).ravel()
+
+    # 利益を算出
+    y = 2000 * tp - 500 * (tp + fp)
 
     # 最適化された予測結果の格納
     temp = test.copy()
-    temp['predict'] = test_predY.map(lambda x: 1 if x > t else 0)
+    temp['predict'] = test_predY2
     
-    return temp, plt, y, t, tp, fn, fp, tn
+    return temp, y, tp, fn, fp, tn
 ```
 
 ## Main処理
@@ -2363,27 +2366,23 @@ print("ConfusionMatrix\n\t{0}\t\t{1}\n\t{2}\t\t{3}".format(tp, fn, fp, tn))
 ![png](output_32_1.png)
 
 
-## （おまけ）一発で予測結果取得
+## （おまけ、いや本題）一発で予測結果取得
 
 
 ```python
+t = 0.27
 train = pd.read_csv('bank_marketing_train.csv')
 test = pd.read_csv('bank_marketing_test-1.csv')
-result, plt, y, t, tp, fn, fp, tn = ippatu(train,test)
+temp, y, tp, fn, fp, tn = ippatu(train,test,t)
 print("Max Profit: {0}, Threshold: {1}".format(y, t))
 print("ConfusionMatrix\n\t{0}\t\t{1}\n\t{2}\t\t{3}".format(tp, fn, fp, tn))
-plt.show()
 result
 ```
 
-    Max Profit: 1544500, Threshold: 0.05
+    Max Profit: 1488500, Threshold: 0.27
     ConfusionMatrix
-    	1649		244
-    	1858		369
-
-
-
-![png](output_34_1.png)
+    	1544		349
+    	1655		572
 
 
 
