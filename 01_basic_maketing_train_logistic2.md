@@ -57,6 +57,7 @@ https://archive.ics.uci.edu/ml/datasets/bank+marketing
 |        | Negative | 1655      | 572    |
 
 * 適合率: 48.3%
+  -  ランダムに電話した場合は46%の確率で契約取れるはずなので、少しは上がったと考えられる
 
 # データ補完パート
 
